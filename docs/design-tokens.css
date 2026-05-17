@@ -1,0 +1,81 @@
+:root {
+  /* Health status */
+  --color-healthy: #1D9E75;
+  --color-healthy-light: #E1F5EE;
+  --color-caution: #BA7517;
+  --color-caution-light: #FAEEDA;
+  --color-danger: #E24B4A;
+  --color-danger-light: #FAEBEB;
+  --color-danger-deep: #A32D2D;
+  --color-hazard: #501313;
+
+  /* Brand */
+  --color-brand-primary: #1D9E75;
+  --color-brand-dark: #0F6E56;
+
+  /* Neutral */
+  --color-bg: #F9F9F7;
+  --color-surface: #FFFFFF;
+  --color-border: #E8E6DF;
+  --color-text-primary: #2C2C2A;
+  --color-text-muted: #6B6B66;
+  --color-focus: #0F6E56;
+  --color-shadow: rgba(44, 44, 42, 0.14);
+
+  /* Typography */
+  --font-sans: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-size-xs: 11px;
+  --font-size-sm: 13px;
+  --font-size-md: 15px;
+  --font-size-lg: 18px;
+  --font-size-xl: 24px;
+  --font-size-2xl: 32px;
+
+  /* Spacing */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-6: 24px;
+  --space-8: 32px;
+
+  /* Shape */
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-full: 9999px;
+
+  /* Elevation */
+  --shadow-panel: 0 14px 40px var(--color-shadow);
+  --shadow-card: 0 8px 24px rgba(44, 44, 42, 0.10);
+}
+
+.aqi-good {
+  --aqi-color: #1D9E75;
+  --aqi-bg: #E1F5EE;
+}
+
+.aqi-moderate {
+  --aqi-color: #639922;
+  --aqi-bg: #EFF7DF;
+}
+
+.aqi-sensitive {
+  --aqi-color: #BA7517;
+  --aqi-bg: #FAEEDA;
+}
+
+.aqi-unhealthy {
+  --aqi-color: #E24B4A;
+  --aqi-bg: #FAEBEB;
+}
+
+.aqi-very-unhealthy {
+  --aqi-color: #A32D2D;
+  --aqi-bg: #F7DEDE;
+}
+
+.aqi-hazardous {
+  --aqi-color: #501313;
+  --aqi-bg: #E9D7D7;
+}
