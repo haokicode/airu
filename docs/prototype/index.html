@@ -1,0 +1,1168 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Airu UI Prototype</title>
+  <style>
+    :root {
+      --color-healthy: #1D9E75;
+      --color-healthy-light: #E1F5EE;
+      --color-caution: #BA7517;
+      --color-caution-light: #FAEEDA;
+      --color-danger: #E24B4A;
+      --color-danger-light: #FAEBEB;
+      --color-danger-deep: #A32D2D;
+      --color-hazard: #501313;
+      --color-brand-primary: #1D9E75;
+      --color-brand-dark: #0F6E56;
+      --color-bg: #F9F9F7;
+      --color-surface: #FFFFFF;
+      --color-border: #E8E6DF;
+      --color-text-primary: #2C2C2A;
+      --color-text-muted: #6B6B66;
+      --font-sans: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      --font-size-xs: 11px;
+      --font-size-sm: 13px;
+      --font-size-md: 15px;
+      --font-size-lg: 18px;
+      --font-size-xl: 24px;
+      --font-size-2xl: 32px;
+      --space-1: 4px;
+      --space-2: 8px;
+      --space-3: 12px;
+      --space-4: 16px;
+      --space-6: 24px;
+      --space-8: 32px;
+      --radius-sm: 8px;
+      --radius-md: 12px;
+      --radius-lg: 16px;
+      --radius-full: 9999px;
+      --shadow-panel: 0 14px 40px rgba(44, 44, 42, 0.14);
+      --shadow-card: 0 8px 24px rgba(44, 44, 42, 0.10);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: var(--color-bg);
+      color: var(--color-text-primary);
+      font-family: var(--font-sans);
+      font-size: var(--font-size-md);
+      line-height: 1.45;
+    }
+
+    button,
+    input,
+    select {
+      font: inherit;
+    }
+
+    button:focus-visible,
+    input:focus-visible,
+    select:focus-visible,
+    [tabindex]:focus-visible {
+      outline: 3px solid rgba(15, 110, 86, 0.32);
+      outline-offset: 2px;
+    }
+
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 40;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: var(--space-4);
+      padding: var(--space-3) var(--space-6);
+      background: rgba(249, 249, 247, 0.96);
+      border-bottom: 1px solid var(--color-border);
+      backdrop-filter: blur(10px);
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: var(--space-2);
+      font-weight: 800;
+      letter-spacing: 0;
+    }
+
+    .brand-mark {
+      display: grid;
+      width: 32px;
+      height: 32px;
+      place-items: center;
+      border-radius: var(--radius-sm);
+      background: var(--color-brand-primary);
+      color: white;
+      font-size: var(--font-size-sm);
+      font-weight: 800;
+    }
+
+    .nav {
+      display: flex;
+      align-items: center;
+      gap: var(--space-2);
+      overflow-x: auto;
+    }
+
+    .nav button {
+      min-height: 36px;
+      padding: 0 var(--space-3);
+      border: 1px solid transparent;
+      border-radius: var(--radius-full);
+      background: transparent;
+      color: var(--color-text-muted);
+      cursor: pointer;
+      white-space: nowrap;
+    }
+
+    .nav button.active {
+      background: var(--color-surface);
+      border-color: var(--color-border);
+      color: var(--color-text-primary);
+      box-shadow: 0 2px 8px rgba(44, 44, 42, 0.08);
+    }
+
+    .screen {
+      display: none;
+      min-height: calc(100vh - 61px);
+    }
+
+    .screen.active {
+      display: block;
+    }
+
+    .container {
+      width: min(1180px, calc(100% - 32px));
+      margin: 0 auto;
+    }
+
+    .button {
+      display: inline-flex;
+      min-height: 44px;
+      align-items: center;
+      justify-content: center;
+      gap: var(--space-2);
+      padding: 0 var(--space-4);
+      border: 1px solid transparent;
+      border-radius: var(--radius-sm);
+      background: var(--color-brand-primary);
+      color: white;
+      font-weight: 700;
+      text-decoration: none;
+      cursor: pointer;
+    }
+
+    .button.secondary {
+      background: var(--color-surface);
+      color: var(--color-text-primary);
+      border-color: var(--color-border);
+    }
+
+    .button.ghost {
+      background: transparent;
+      color: var(--color-text-primary);
+      border-color: transparent;
+    }
+
+    .badge {
+      display: inline-flex;
+      min-height: 26px;
+      align-items: center;
+      gap: var(--space-1);
+      padding: 0 var(--space-2);
+      border-radius: var(--radius-full);
+      font-size: var(--font-size-xs);
+      font-weight: 800;
+    }
+
+    .badge.good {
+      background: var(--color-healthy-light);
+      color: var(--color-brand-dark);
+    }
+
+    .badge.caution {
+      background: var(--color-caution-light);
+      color: var(--color-caution);
+    }
+
+    .badge.danger {
+      background: var(--color-danger-light);
+      color: var(--color-danger-deep);
+    }
+
+    .hero {
+      position: relative;
+      min-height: calc(100vh - 61px);
+      padding: var(--space-8) 0 88px;
+      overflow: hidden;
+      background: #ECEFEA;
+    }
+
+    .hero-map {
+      position: absolute;
+      inset: 0;
+      background:
+        linear-gradient(90deg, rgba(232, 230, 223, 0.72) 1px, transparent 1px),
+        linear-gradient(0deg, rgba(232, 230, 223, 0.72) 1px, transparent 1px),
+        #F6F6F1;
+      background-size: 72px 72px;
+    }
+
+    .road {
+      position: absolute;
+      height: 14px;
+      border-radius: var(--radius-full);
+      background: #D4D1C8;
+      transform-origin: left center;
+      box-shadow: 0 1px 0 rgba(255, 255, 255, 0.7) inset;
+    }
+
+    .road.r1 {
+      top: 20%;
+      left: 5%;
+      width: 54%;
+      transform: rotate(12deg);
+    }
+
+    .road.r2 {
+      top: 62%;
+      left: 18%;
+      width: 72%;
+      transform: rotate(-9deg);
+    }
+
+    .road.r3 {
+      top: 42%;
+      left: 48%;
+      width: 44%;
+      transform: rotate(70deg);
+    }
+
+    .route-line {
+      position: absolute;
+      height: 8px;
+      border-radius: var(--radius-full);
+      transform-origin: left center;
+    }
+
+    .route-line.good {
+      top: 38%;
+      left: 22%;
+      width: 30%;
+      background: var(--color-healthy);
+      transform: rotate(-8deg);
+    }
+
+    .route-line.warn {
+      top: 43%;
+      left: 48%;
+      width: 24%;
+      background: var(--color-caution);
+      transform: rotate(18deg);
+    }
+
+    .route-line.bad {
+      top: 51%;
+      left: 68%;
+      width: 16%;
+      background: var(--color-danger);
+      transform: rotate(-28deg);
+    }
+
+    .hero-content {
+      position: relative;
+      z-index: 1;
+      display: grid;
+      min-height: 560px;
+      align-items: center;
+    }
+
+    .hero-copy {
+      max-width: 520px;
+      padding: var(--space-6);
+      background: rgba(255, 255, 255, 0.88);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-md);
+      box-shadow: var(--shadow-panel);
+    }
+
+    .hero h1 {
+      margin: 0 0 var(--space-3);
+      font-size: var(--font-size-2xl);
+      line-height: 1.05;
+      letter-spacing: 0;
+    }
+
+    .hero p {
+      margin: 0 0 var(--space-6);
+      color: var(--color-text-muted);
+      font-size: var(--font-size-lg);
+    }
+
+    .hero-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--space-3);
+    }
+
+    .signal-strip {
+      position: absolute;
+      right: max(16px, calc((100% - 1180px) / 2));
+      bottom: 28px;
+      left: max(16px, calc((100% - 1180px) / 2));
+      z-index: 2;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: var(--space-3);
+    }
+
+    .signal {
+      min-height: 86px;
+      padding: var(--space-4);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-sm);
+      background: var(--color-surface);
+      box-shadow: var(--shadow-card);
+    }
+
+    .signal strong {
+      display: block;
+      margin-bottom: var(--space-1);
+      font-size: var(--font-size-lg);
+    }
+
+    .signal span {
+      color: var(--color-text-muted);
+      font-size: var(--font-size-sm);
+    }
+
+    .auth-page,
+    .profile-page,
+    .result-page,
+    .list-page {
+      padding: var(--space-8) 0;
+    }
+
+    .auth-grid,
+    .profile-grid,
+    .result-grid,
+    .list-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(320px, 420px);
+      gap: var(--space-6);
+      align-items: start;
+    }
+
+    .panel {
+      background: var(--color-surface);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-md);
+      box-shadow: var(--shadow-card);
+    }
+
+    .panel.pad {
+      padding: var(--space-6);
+    }
+
+    .panel h2,
+    .panel h3 {
+      margin: 0 0 var(--space-3);
+      letter-spacing: 0;
+    }
+
+    .panel p {
+      margin: 0 0 var(--space-4);
+      color: var(--color-text-muted);
+    }
+
+    .field {
+      display: grid;
+      gap: var(--space-1);
+      margin-bottom: var(--space-4);
+    }
+
+    .field label {
+      font-size: var(--font-size-sm);
+      font-weight: 700;
+    }
+
+    .field input,
+    .field select {
+      min-height: 44px;
+      width: 100%;
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-sm);
+      padding: 0 var(--space-3);
+      background: white;
+      color: var(--color-text-primary);
+    }
+
+    .chip-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: var(--space-2);
+      margin: var(--space-3) 0 var(--space-6);
+    }
+
+    .chip {
+      min-height: 44px;
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-sm);
+      background: var(--color-surface);
+      color: var(--color-text-primary);
+      cursor: pointer;
+    }
+
+    .chip.selected {
+      border-color: var(--color-brand-primary);
+      background: var(--color-healthy-light);
+      color: var(--color-brand-dark);
+      font-weight: 800;
+    }
+
+    .segmented {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: var(--space-2);
+      padding: var(--space-1);
+      background: var(--color-bg);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-sm);
+    }
+
+    .segmented button {
+      min-height: 40px;
+      border: 0;
+      border-radius: var(--radius-sm);
+      background: transparent;
+      color: var(--color-text-muted);
+      cursor: pointer;
+    }
+
+    .segmented button.selected {
+      background: var(--color-surface);
+      color: var(--color-text-primary);
+      box-shadow: 0 2px 8px rgba(44, 44, 42, 0.08);
+      font-weight: 800;
+    }
+
+    .preview-map,
+    .map-canvas {
+      position: relative;
+      overflow: hidden;
+      min-height: 320px;
+      background:
+        linear-gradient(90deg, rgba(232, 230, 223, 0.9) 1px, transparent 1px),
+        linear-gradient(0deg, rgba(232, 230, 223, 0.9) 1px, transparent 1px),
+        #F2F3EE;
+      background-size: 54px 54px;
+    }
+
+    .preview-map {
+      border-radius: var(--radius-md);
+      border: 1px solid var(--color-border);
+    }
+
+    .map-page {
+      position: relative;
+      min-height: calc(100vh - 61px);
+      overflow: hidden;
+    }
+
+    .map-canvas {
+      position: absolute;
+      inset: 0;
+      min-height: 0;
+    }
+
+    .map-route {
+      position: absolute;
+      height: 9px;
+      border-radius: var(--radius-full);
+      transform-origin: left center;
+    }
+
+    .map-route.a {
+      top: 34%;
+      left: 18%;
+      width: 28%;
+      background: var(--color-healthy);
+      transform: rotate(20deg);
+    }
+
+    .map-route.b {
+      top: 48%;
+      left: 41%;
+      width: 26%;
+      background: var(--color-caution);
+      transform: rotate(-18deg);
+    }
+
+    .map-route.c {
+      top: 41%;
+      left: 62%;
+      width: 16%;
+      background: var(--color-danger);
+      transform: rotate(42deg);
+    }
+
+    .pin {
+      position: absolute;
+      display: grid;
+      width: 38px;
+      height: 38px;
+      place-items: center;
+      border: 3px solid white;
+      border-radius: var(--radius-full);
+      background: var(--color-brand-primary);
+      color: white;
+      font-size: var(--font-size-xs);
+      font-weight: 900;
+      box-shadow: var(--shadow-card);
+    }
+
+    .pin.start {
+      top: 30%;
+      left: 16%;
+    }
+
+    .pin.end {
+      top: 48%;
+      left: 76%;
+      background: var(--color-danger);
+    }
+
+    .search-panel {
+      position: absolute;
+      top: var(--space-4);
+      left: var(--space-4);
+      z-index: 5;
+      width: min(420px, calc(100% - 32px));
+      padding: var(--space-4);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-md);
+      background: rgba(255, 255, 255, 0.94);
+      box-shadow: var(--shadow-panel);
+    }
+
+    .search-actions {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: var(--space-2);
+      align-items: end;
+    }
+
+    .sheet {
+      position: absolute;
+      right: var(--space-4);
+      bottom: var(--space-4);
+      z-index: 6;
+      width: min(440px, calc(100% - 32px));
+      max-height: calc(100vh - 120px);
+      overflow: auto;
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-md);
+      background: var(--color-surface);
+      box-shadow: var(--shadow-panel);
+      transition: max-height 180ms ease;
+    }
+
+    .sheet.collapsed {
+      max-height: 76px;
+    }
+
+    .sheet.mid {
+      max-height: 45vh;
+    }
+
+    .sheet.expanded {
+      max-height: 85vh;
+    }
+
+    .sheet-handle {
+      display: flex;
+      justify-content: center;
+      padding: var(--space-3) 0 var(--space-2);
+    }
+
+    .sheet-handle span {
+      width: 48px;
+      height: 5px;
+      border-radius: var(--radius-full);
+      background: var(--color-border);
+    }
+
+    .sheet-content {
+      padding: 0 var(--space-4) var(--space-4);
+    }
+
+    .sheet-controls {
+      display: flex;
+      gap: var(--space-2);
+      margin-bottom: var(--space-3);
+    }
+
+    .sheet-controls button {
+      min-height: 32px;
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-full);
+      background: var(--color-surface);
+      color: var(--color-text-muted);
+      cursor: pointer;
+    }
+
+    .route-card,
+    .alert-card,
+    .history-card,
+    .segment-row {
+      display: grid;
+      gap: var(--space-2);
+      padding: var(--space-4);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-sm);
+      background: var(--color-surface);
+    }
+
+    .route-card {
+      grid-template-columns: 1fr auto;
+      align-items: center;
+      margin-bottom: var(--space-3);
+      cursor: pointer;
+    }
+
+    .route-card.selected {
+      border-color: var(--color-brand-primary);
+      box-shadow: 0 0 0 3px rgba(29, 158, 117, 0.12);
+    }
+
+    .route-card h3,
+    .alert-card h3,
+    .history-card h3 {
+      margin: 0;
+      font-size: var(--font-size-md);
+      letter-spacing: 0;
+    }
+
+    .metrics {
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--space-2);
+      color: var(--color-text-muted);
+      font-size: var(--font-size-sm);
+    }
+
+    .score {
+      display: grid;
+      width: 56px;
+      height: 56px;
+      place-items: center;
+      border-radius: var(--radius-full);
+      background: var(--color-healthy-light);
+      color: var(--color-brand-dark);
+      font-weight: 900;
+    }
+
+    .score.caution {
+      background: var(--color-caution-light);
+      color: var(--color-caution);
+    }
+
+    .score.danger {
+      background: var(--color-danger-light);
+      color: var(--color-danger-deep);
+    }
+
+    .progress {
+      height: 10px;
+      overflow: hidden;
+      border-radius: var(--radius-full);
+      background: var(--color-border);
+    }
+
+    .progress span {
+      display: block;
+      height: 100%;
+      border-radius: inherit;
+      background: var(--color-brand-primary);
+    }
+
+    .segment-list {
+      display: grid;
+      gap: var(--space-2);
+      margin-top: var(--space-4);
+    }
+
+    .segment-row {
+      grid-template-columns: auto 1fr auto;
+      align-items: center;
+    }
+
+    .dot {
+      width: 12px;
+      height: 12px;
+      border-radius: var(--radius-full);
+      background: var(--color-healthy);
+    }
+
+    .dot.caution {
+      background: var(--color-caution);
+    }
+
+    .dot.danger {
+      background: var(--color-danger);
+    }
+
+    .list-stack {
+      display: grid;
+      gap: var(--space-3);
+    }
+
+    .alert-card,
+    .history-card {
+      cursor: pointer;
+    }
+
+    .alert-card.unread {
+      border-color: rgba(186, 117, 23, 0.42);
+      background: #FFF9EE;
+    }
+
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: var(--space-3);
+      margin-bottom: var(--space-4);
+    }
+
+    .summary-tile {
+      padding: var(--space-4);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-sm);
+      background: var(--color-surface);
+    }
+
+    .summary-tile strong {
+      display: block;
+      font-size: var(--font-size-xl);
+    }
+
+    .summary-tile span {
+      color: var(--color-text-muted);
+      font-size: var(--font-size-sm);
+    }
+
+    @media (max-width: 820px) {
+      .topbar {
+        align-items: flex-start;
+        padding: var(--space-3);
+      }
+
+      .brand {
+        flex: 0 0 auto;
+      }
+
+      .nav {
+        justify-content: flex-start;
+      }
+
+      .hero {
+        min-height: calc(100vh - 76px);
+        padding-bottom: 260px;
+      }
+
+      .hero-copy {
+        margin-top: var(--space-8);
+      }
+
+      .signal-strip {
+        grid-template-columns: 1fr;
+      }
+
+      .auth-grid,
+      .profile-grid,
+      .result-grid,
+      .list-grid,
+      .summary-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .search-panel {
+        right: var(--space-3);
+        left: var(--space-3);
+        width: auto;
+      }
+
+      .sheet {
+        right: 0;
+        bottom: 0;
+        left: 0;
+        width: 100%;
+        border-right: 0;
+        border-bottom: 0;
+        border-left: 0;
+        border-radius: var(--radius-md) var(--radius-md) 0 0;
+      }
+
+      .sheet.mid {
+        max-height: 48vh;
+      }
+
+      .sheet.expanded {
+        max-height: 86vh;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand" aria-label="Airu">
+      <span class="brand-mark">AI</span>
+      <span>Airu</span>
+    </div>
+    <nav class="nav" aria-label="Prototype screens">
+      <button class="active" data-screen-target="landing">Landing</button>
+      <button data-screen-target="login">Login</button>
+      <button data-screen-target="profile">Profile</button>
+      <button data-screen-target="map">Map</button>
+      <button data-screen-target="result">Result</button>
+      <button data-screen-target="alerts">Alerts</button>
+      <button data-screen-target="history">History</button>
+    </nav>
+  </header>
+
+  <main>
+    <section class="screen active" data-screen="landing">
+      <div class="hero">
+        <div class="hero-map" aria-hidden="true">
+          <span class="road r1"></span>
+          <span class="road r2"></span>
+          <span class="road r3"></span>
+          <span class="route-line good"></span>
+          <span class="route-line warn"></span>
+          <span class="route-line bad"></span>
+        </div>
+        <div class="container hero-content">
+          <div class="hero-copy">
+            <span class="badge good">Skor sehat 81</span>
+            <h1>Airu</h1>
+            <p>Bandingkan rute tercepat dengan rute yang lebih sehat berdasarkan kualitas udara, panas, dan kondisi perjalanan.</p>
+            <div class="hero-actions">
+              <button class="button" data-screen-target="map">Rencanakan rute</button>
+              <button class="button secondary" data-screen-target="profile">Atur profil sehat</button>
+            </div>
+          </div>
+        </div>
+        <div class="signal-strip">
+          <div class="signal">
+            <strong>23 min</strong>
+            <span>Rute tercepat, AQI 122, Berisiko</span>
+          </div>
+          <div class="signal">
+            <strong>28 min</strong>
+            <span>Rute sehat, AQI 64, Sedang</span>
+          </div>
+          <div class="signal">
+            <strong>5 titik</strong>
+            <span>Segmen AQI tinggi terdeteksi</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="screen" data-screen="login">
+      <div class="container auth-page">
+        <div class="auth-grid">
+          <div class="preview-map" aria-label="Route preview">
+            <span class="map-route a"></span>
+            <span class="map-route b"></span>
+            <span class="map-route c"></span>
+            <span class="pin start">A</span>
+            <span class="pin end">B</span>
+          </div>
+          <form class="panel pad">
+            <h2>Masuk</h2>
+            <p>Simpan profil kesehatan, riwayat rute, dan peringatan AQI.</p>
+            <button class="button" type="button" data-screen-target="profile">Lanjut dengan Google</button>
+            <div class="field" style="margin-top: 24px;">
+              <label for="email">Email</label>
+              <input id="email" type="email" value="demo@airu.app">
+            </div>
+            <div class="field">
+              <label for="password">Password</label>
+              <input id="password" type="password" value="password">
+            </div>
+            <button class="button secondary" type="button" data-screen-target="profile">Masuk</button>
+          </form>
+        </div>
+      </div>
+    </section>
+
+    <section class="screen" data-screen="profile">
+      <div class="container profile-page">
+        <div class="profile-grid">
+          <div class="panel pad">
+            <h2>Profil kesehatan</h2>
+            <p>Preferensi ini dipakai untuk menyesuaikan rekomendasi rute.</p>
+            <h3>Kondisi</h3>
+            <div class="chip-grid">
+              <button class="chip selected" type="button">Asma</button>
+              <button class="chip selected" type="button">Sensitif AQI</button>
+              <button class="chip" type="button">Anak kecil</button>
+              <button class="chip" type="button">Lansia</button>
+            </div>
+            <h3>Mode perjalanan</h3>
+            <div class="segmented" role="group" aria-label="Mode perjalanan">
+              <button class="selected" type="button">Jalan kaki</button>
+              <button type="button">Sepeda</button>
+            </div>
+            <div class="field" style="margin-top: 24px;">
+              <label for="threshold">Ambang peringatan AQI</label>
+              <input id="threshold" type="range" min="50" max="200" value="110">
+            </div>
+            <button class="button" type="button" data-screen-target="map">Simpan profil</button>
+          </div>
+          <aside class="panel pad">
+            <span class="badge caution">Mode keluarga nonaktif</span>
+            <h3 style="margin-top: 12px;">Ringkasan</h3>
+            <p>Rute dengan AQI tinggi akan mendapat penalti lebih besar untuk profil sensitif.</p>
+            <div class="progress" aria-label="Sensitivity level">
+              <span style="width: 72%;"></span>
+            </div>
+          </aside>
+        </div>
+      </div>
+    </section>
+
+    <section class="screen" data-screen="map">
+      <div class="map-page">
+        <div class="map-canvas" role="img" aria-label="Peta rute Airu dengan segmen hijau, kuning, dan merah">
+          <span class="road r1"></span>
+          <span class="road r2"></span>
+          <span class="road r3"></span>
+          <span class="map-route a"></span>
+          <span class="map-route b"></span>
+          <span class="map-route c"></span>
+          <span class="pin start">A</span>
+          <span class="pin end">B</span>
+        </div>
+        <form class="search-panel">
+          <div class="field">
+            <label for="origin">Asal</label>
+            <input id="origin" value="Rumah, Tebet">
+          </div>
+          <div class="search-actions">
+            <div class="field" style="margin-bottom: 0;">
+              <label for="destination">Tujuan</label>
+              <input id="destination" value="Kantor, Sudirman">
+            </div>
+            <button class="button secondary" type="button" aria-label="Gunakan lokasi saat ini">GPS</button>
+          </div>
+          <button class="button" style="width: 100%; margin-top: 16px;" type="button" data-sheet-state="mid">Analisis rute</button>
+        </form>
+        <aside class="sheet mid" id="routeSheet" aria-label="Perbandingan rute">
+          <div class="sheet-handle" aria-hidden="true"><span></span></div>
+          <div class="sheet-content">
+            <div class="sheet-controls" aria-label="Bottom sheet state">
+              <button type="button" data-sheet-state="collapsed">Ringkas</button>
+              <button type="button" data-sheet-state="mid">Bandingkan</button>
+              <button type="button" data-sheet-state="expanded">Detail</button>
+            </div>
+            <article class="route-card selected" tabindex="0" data-screen-target="result">
+              <div>
+                <h3>Rute sehat</h3>
+                <div class="metrics">
+                  <span>28 min</span>
+                  <span>2.7 km</span>
+                  <span>AQI 64 - Sedang</span>
+                </div>
+              </div>
+              <div class="score">81</div>
+            </article>
+            <article class="route-card" tabindex="0">
+              <div>
+                <h3>Rute tercepat</h3>
+                <div class="metrics">
+                  <span>23 min</span>
+                  <span>2.2 km</span>
+                  <span>AQI 122 - Berisiko</span>
+                </div>
+              </div>
+              <div class="score caution">54</div>
+            </article>
+            <div class="segment-list">
+              <div class="segment-row">
+                <span class="dot"></span>
+                <span>Jalan teduh dekat taman</span>
+                <strong>AQI 42</strong>
+              </div>
+              <div class="segment-row">
+                <span class="dot caution"></span>
+                <span>Persimpangan padat</span>
+                <strong>AQI 96</strong>
+              </div>
+              <div class="segment-row">
+                <span class="dot danger"></span>
+                <span>Koridor lalu lintas berat</span>
+                <strong>AQI 154</strong>
+              </div>
+            </div>
+          </div>
+        </aside>
+      </div>
+    </section>
+
+    <section class="screen" data-screen="result">
+      <div class="container result-page">
+        <div class="summary-grid">
+          <div class="summary-tile">
+            <strong>81</strong>
+            <span>Skor sehat</span>
+          </div>
+          <div class="summary-tile">
+            <strong>28 min</strong>
+            <span>Durasi</span>
+          </div>
+          <div class="summary-tile">
+            <strong>AQI 64</strong>
+            <span>Sedang</span>
+          </div>
+        </div>
+        <div class="result-grid">
+          <div class="preview-map" aria-label="Detail route preview">
+            <span class="map-route a"></span>
+            <span class="map-route b"></span>
+            <span class="map-route c"></span>
+            <span class="pin start">A</span>
+            <span class="pin end">B</span>
+          </div>
+          <aside class="panel pad">
+            <span class="badge good">Direkomendasikan</span>
+            <h2>Rute sehat</h2>
+            <p>Rute ini sedikit lebih lama, tetapi melewati lebih banyak area teduh dan menghindari segmen AQI tinggi.</p>
+            <h3>Rekomendasi AI</h3>
+            <p>Gunakan rute sehat untuk perjalanan siang ini. Segmen berisiko berada dekat koridor lalu lintas padat, jadi pertimbangkan masker jika melewati area tersebut.</p>
+            <button class="button" type="button">Mulai rute sehat</button>
+          </aside>
+        </div>
+      </div>
+    </section>
+
+    <section class="screen" data-screen="alerts">
+      <div class="container list-page">
+        <div class="list-grid">
+          <div class="list-stack">
+            <article class="alert-card unread" tabindex="0">
+              <span class="badge caution">Berisiko</span>
+              <h3>AQI dekat Sudirman mencapai 126</h3>
+              <div class="metrics">
+                <span>08:20</span>
+                <span>PM2.5 meningkat</span>
+              </div>
+            </article>
+            <article class="alert-card" tabindex="0">
+              <span class="badge good">Membaik</span>
+              <h3>AQI dekat rumah turun ke 68</h3>
+              <div class="metrics">
+                <span>Kemarin</span>
+                <span>Sedang</span>
+              </div>
+            </article>
+          </div>
+          <aside class="panel pad">
+            <h2>Peringatan terbaru</h2>
+            <p>Hindari segmen dekat koridor lalu lintas berat sampai AQI turun di bawah ambang profil.</p>
+            <button class="button secondary" type="button" data-screen-target="map">Cari rute lain</button>
+          </aside>
+        </div>
+      </div>
+    </section>
+
+    <section class="screen" data-screen="history">
+      <div class="container list-page">
+        <div class="summary-grid">
+          <div class="summary-tile">
+            <strong>72</strong>
+            <span>Rata-rata AQI minggu ini</span>
+          </div>
+          <div class="summary-tile">
+            <strong>6</strong>
+            <span>Rute disimpan</span>
+          </div>
+          <div class="summary-tile">
+            <strong>18%</strong>
+            <span>Paparan turun</span>
+          </div>
+        </div>
+        <div class="list-grid">
+          <div class="list-stack">
+            <article class="history-card" tabindex="0" data-screen-target="result">
+              <span class="badge good">Sehat</span>
+              <h3>Rumah -> Kantor</h3>
+              <div class="metrics">
+                <span>28 min</span>
+                <span>Skor 81</span>
+                <span>AQI 64</span>
+              </div>
+            </article>
+            <article class="history-card" tabindex="0">
+              <span class="badge caution">Sedang</span>
+              <h3>Stasiun -> Kampus</h3>
+              <div class="metrics">
+                <span>18 min</span>
+                <span>Skor 69</span>
+                <span>AQI 88</span>
+              </div>
+            </article>
+          </div>
+          <aside class="panel pad">
+            <h2>Eksposur pribadi</h2>
+            <p>Rute sehat yang dipilih minggu ini mengurangi paparan segmen AQI tinggi dibanding rute tercepat.</p>
+            <div class="progress" aria-label="Exposure reduction">
+              <span style="width: 82%;"></span>
+            </div>
+          </aside>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const screenButtons = document.querySelectorAll("[data-screen-target]");
+    const screens = document.querySelectorAll("[data-screen]");
+    const navButtons = document.querySelectorAll(".nav [data-screen-target]");
+    const routeSheet = document.getElementById("routeSheet");
+
+    function showScreen(name) {
+      screens.forEach((screen) => {
+        screen.classList.toggle("active", screen.dataset.screen === name);
+      });
+      navButtons.forEach((button) => {
+        button.classList.toggle("active", button.dataset.screenTarget === name);
+      });
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+
+    screenButtons.forEach((button) => {
+      button.addEventListener("click", () => {
+        const target = button.dataset.screenTarget;
+        if (target) showScreen(target);
+      });
+    });
+
+    document.querySelectorAll("[data-sheet-state]").forEach((button) => {
+      button.addEventListener("click", () => {
+        if (!routeSheet) return;
+        routeSheet.classList.remove("collapsed", "mid", "expanded");
+        routeSheet.classList.add(button.dataset.sheetState);
+      });
+    });
+  </script>
+</body>
+</html>

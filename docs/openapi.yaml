@@ -1,0 +1,364 @@
+openapi: 3.1.0
+info:
+  title: Airu API
+  version: 0.1.0
+  description: Initial API contract for Airu planning and architecture phase.
+servers:
+  - url: http://localhost:3000
+    description: Local development
+  - url: https://airu-app-staging.example.run.app
+    description: Staging placeholder
+tags:
+  - name: Auth
+  - name: Air Quality
+  - name: Route
+  - name: AI
+security:
+  - sessionCookie: []
+paths:
+  /api/auth/session:
+    post:
+      tags: [Auth]
+      summary: Create a Firebase session cookie.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [idToken]
+              properties:
+                idToken:
+                  type: string
+                  minLength: 1
+      responses:
+        "204":
+          description: Session cookie has been set.
+          headers:
+            Set-Cookie:
+              schema:
+                type: string
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+    delete:
+      tags: [Auth]
+      summary: Clear the Firebase session cookie.
+      security: []
+      responses:
+        "204":
+          description: Session cookie has been cleared.
+
+  /api/aqi/current:
+    get:
+      tags: [Air Quality]
+      summary: Get current AQI for a coordinate using Firestore cache.
+      parameters:
+        - name: lat
+          in: query
+          required: true
+          schema:
+            type: number
+            minimum: -90
+            maximum: 90
+        - name: lng
+          in: query
+          required: true
+          schema:
+            type: number
+            minimum: -180
+            maximum: 180
+      responses:
+        "200":
+          description: Current AQI data.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AQIResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /api/route/analyze:
+    post:
+      tags: [Route]
+      summary: Analyze route alternatives and return fastest and healthiest routes.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RouteAnalysisRequest"
+      responses:
+        "200":
+          description: Scored route alternatives.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RouteAnalysisResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          description: No route found.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "429":
+          $ref: "#/components/responses/RateLimited"
+
+  /api/ai/recommend:
+    post:
+      tags: [AI]
+      summary: Stream a Bahasa Indonesia recommendation for selected routes.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AIRecommendationRequest"
+      responses:
+        "200":
+          description: Streaming recommendation text.
+          content:
+            text/event-stream:
+              schema:
+                type: string
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "429":
+          $ref: "#/components/responses/RateLimited"
+
+components:
+  securitySchemes:
+    sessionCookie:
+      type: apiKey
+      in: cookie
+      name: __session
+
+  responses:
+    BadRequest:
+      description: Request validation failed.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    Unauthorized:
+      description: Missing or invalid session.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    RateLimited:
+      description: Too many requests.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+
+  schemas:
+    ErrorResponse:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: string
+        details:
+          type: object
+          additionalProperties: true
+
+    Coordinate:
+      type: object
+      required: [lat, lng]
+      properties:
+        lat:
+          type: number
+          minimum: -90
+          maximum: 90
+        lng:
+          type: number
+          minimum: -180
+          maximum: 180
+
+    LocationInput:
+      allOf:
+        - $ref: "#/components/schemas/Coordinate"
+        - type: object
+          required: [address]
+          properties:
+            address:
+              type: string
+              minLength: 1
+            placeId:
+              type: string
+
+    TravelMode:
+      type: string
+      enum: [WALK, BICYCLE]
+
+    RiskLevel:
+      type: string
+      enum: [healthy, caution, danger]
+
+    AQIResponse:
+      type: object
+      required: [geohash, lat, lng, aqi, category, fetchedAt, stale]
+      properties:
+        geohash:
+          type: string
+        lat:
+          type: number
+        lng:
+          type: number
+        aqi:
+          type: integer
+          minimum: 0
+        pm25:
+          type:
+            - number
+            - "null"
+        pm10:
+          type:
+            - number
+            - "null"
+        category:
+          type: string
+        fetchedAt:
+          type: string
+          format: date-time
+        stale:
+          type: boolean
+
+    RouteSegment:
+      type: object
+      required:
+        - index
+        - start
+        - end
+        - distanceMeters
+        - durationSeconds
+        - aqi
+        - healthScore
+        - riskLevel
+      properties:
+        index:
+          type: integer
+          minimum: 0
+        start:
+          $ref: "#/components/schemas/Coordinate"
+        end:
+          $ref: "#/components/schemas/Coordinate"
+        distanceMeters:
+          type: number
+          minimum: 0
+        durationSeconds:
+          type: number
+          minimum: 0
+        aqi:
+          type: integer
+          minimum: 0
+        healthScore:
+          type: integer
+          minimum: 0
+          maximum: 100
+        riskLevel:
+          $ref: "#/components/schemas/RiskLevel"
+
+    ScoredRoute:
+      type: object
+      required:
+        - routeId
+        - label
+        - distanceMeters
+        - durationSeconds
+        - healthScore
+        - avgAQI
+        - encodedPolyline
+        - segments
+      properties:
+        routeId:
+          type: string
+        label:
+          type: string
+          enum: [fastest, healthiest, alternative]
+        distanceMeters:
+          type: number
+          minimum: 0
+        durationSeconds:
+          type: number
+          minimum: 0
+        healthScore:
+          type: integer
+          minimum: 0
+          maximum: 100
+        avgAQI:
+          type: integer
+          minimum: 0
+        encodedPolyline:
+          type: string
+        segments:
+          type: array
+          minItems: 1
+          items:
+            $ref: "#/components/schemas/RouteSegment"
+
+    RouteAnalysisRequest:
+      type: object
+      required: [origin, destination, travelMode]
+      properties:
+        origin:
+          $ref: "#/components/schemas/LocationInput"
+        destination:
+          $ref: "#/components/schemas/LocationInput"
+        travelMode:
+          $ref: "#/components/schemas/TravelMode"
+        conditions:
+          type: array
+          items:
+            type: string
+          default: []
+        familyMode:
+          type: boolean
+          default: false
+
+    RouteAnalysisResponse:
+      type: object
+      required: [id, fastest, healthiest, createdAt]
+      properties:
+        id:
+          type: string
+        fastest:
+          $ref: "#/components/schemas/ScoredRoute"
+        healthiest:
+          $ref: "#/components/schemas/ScoredRoute"
+        createdAt:
+          type: string
+          format: date-time
+
+    AIRecommendationRequest:
+      type: object
+      required: [routeAnalysisId, selectedRouteId, language]
+      properties:
+        routeAnalysisId:
+          type: string
+        selectedRouteId:
+          type: string
+        language:
+          type: string
+          enum: [id]
+        userContext:
+          type: object
+          properties:
+            conditions:
+              type: array
+              items:
+                type: string
+            familyMode:
+              type: boolean
