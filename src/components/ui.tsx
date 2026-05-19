@@ -17,10 +17,17 @@ export function Button({
   children,
   className = "",
   type = "button",
+  disabled,
   ...props
 }: ButtonProps) {
   return (
-    <button className={`button button-${variant} ${className}`} type={type} {...props}>
+    <button
+      aria-busy={loading ? "true" : undefined}
+      className={`button button-${variant} ${className}`}
+      disabled={disabled || loading}
+      type={type}
+      {...props}
+    >
       {loading ? <Loader2 aria-hidden="true" className="button-icon spin" /> : null}
       {!loading && Icon ? <Icon aria-hidden="true" className="button-icon" /> : null}
       {children}
@@ -59,14 +66,16 @@ export function IconButton({
   icon: Icon,
   variant = "secondary",
   className = "",
-}: {
+  type = "button",
+  ...props
+}: ButtonHTMLAttributes<HTMLButtonElement> & {
   label: string;
   icon: LucideIcon;
   variant?: "secondary" | "ghost";
   className?: string;
 }) {
   return (
-    <button aria-label={label} className={`icon-button icon-button-${variant} ${className}`}>
+    <button aria-label={label} className={`icon-button icon-button-${variant} ${className}`} type={type} {...props}>
       <Icon aria-hidden="true" />
     </button>
   );

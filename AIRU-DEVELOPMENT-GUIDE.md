@@ -696,11 +696,11 @@ console.error(JSON.stringify({
 
 ### Aktivitas
 
-- [ ] Setup framework + routing + state management
-- [ ] Implementasi komponen UI sesuai design system
-- [ ] Integrasi API (TanStack Query + Fetch)
-- [ ] Client-side validation & form handling (React Hook Form + Zod)
-- [ ] Responsif & accessibility (a11y)
+- [x] Setup framework + routing + state management
+- [x] Implementasi komponen UI sesuai design system
+- [x] Integrasi API (TanStack Query + Fetch)
+- [x] Client-side validation & form handling (React Hook Form + Zod)
+- [x] Responsif & accessibility (a11y)
 
 ---
 
