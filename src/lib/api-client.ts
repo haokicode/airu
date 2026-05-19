@@ -24,5 +24,14 @@ export async function fetchJson<T>(input: RequestInfo | URL, init?: RequestInit)
     throw new ApiRequestError(text || response.statusText, response.status);
   }
 
-  return (text ? JSON.parse(text) : {}) as T;
+  if (!text) {
+    return {} as T;
+  }
+
+  const parsed = JSON.parse(text) as unknown;
+  if (parsed && typeof parsed === "object" && "data" in parsed) {
+    return (parsed as { data: T }).data;
+  }
+
+  return parsed as T;
 }

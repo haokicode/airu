@@ -4,7 +4,7 @@ UI/UX telah diimplementasikan sebagai aplikasi Next.js oleh agen Codex. Berikut 
 
 ## Yang Dibuat
 - **App Router + route UI**: `/`, `/login`, `/profile`, `/map`, `/result/demo-route`, `/alerts`, `/history`.
-- **Core Map Workspace**: Dilengkapi dengan search panel, mock map visual, route comparison, bottom sheet state, AI recommendation mock, dan segment detail (diimplementasikan di `src/components/map-workspace.tsx`).
+- **Core Map Workspace**: Dilengkapi dengan search panel berbasis Google Places, Google Maps visual, route comparison, bottom sheet state, streaming AI recommendation, dan segment detail (diimplementasikan di `src/components/map-workspace.tsx`).
 - **Shared UI Components**: Meliputi button, badge, score bar, route card, map visual, dan segment list (diimplementasikan di `src/components`).
 - **Styling**: Global responsive styling dan implementasi design token (di `src/app/globals.css`).
 - **Project Setup**: Scripts, dependency lock, lint config, README, dan `.gitignore` telah disiapkan.
@@ -25,5 +25,5 @@ Dev server sudah berjalan di:
 ## Catatan Teknis
 - PRD awal menyebutkan Next 14, tapi di environment lokal Node 24, native SWC Next 14 gagal load.
 - Solusi: Menggunakan Next 16.2.6 dan script dev/build menggunakan flag `--webpack` agar build/dev server stabil di mesin ini.
-- Backend/API integration belum dikerjakan; UI saat ini masih menggunakan *mock data*.
-- Hook frontend sudah memanggil kontrak endpoint `/api/route/analyze`, `/api/ai/recommend`, `/api/aqi/current`, dan `/api/history`; selama endpoint backend belum tersedia, UI memakai fallback mock agar alur tetap dapat dicoba.
+- Backend/API integration sudah terhubung ke Firebase session, Google Routes, Google Air Quality, Firestore, dan Gemini saat `.env.local` terisi.
+- Hook frontend memanggil endpoint `/api/route/analyze`, `/api/ai/recommend`, `/api/aqi/current`, dan `/api/history`; fallback provider mock hanya dipakai jika `AIRU_ALLOW_PROVIDER_MOCKS=true`.

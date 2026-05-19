@@ -36,6 +36,7 @@ export type RouteOption = {
   delta?: string;
   recommended?: boolean;
   segments: Segment[];
+  encodedPolyline?: string;
 };
 
 export type AlertItem = {

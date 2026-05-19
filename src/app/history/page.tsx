@@ -6,11 +6,10 @@ import { AppShell } from "@/components/app-shell";
 import { Badge, LinkButton } from "@/components/ui";
 import { MapVisual } from "@/components/map-visual";
 import { useHistory } from "@/hooks/use-history";
-import { history } from "@/lib/mock-data";
 
 export default function HistoryPage() {
-  const { data, isLoading } = useHistory();
-  const routeHistory = data?.items ?? history;
+  const { data, error, isLoading } = useHistory();
+  const routeHistory = data?.items ?? [];
 
   return (
     <AppShell>
@@ -42,9 +41,9 @@ export default function HistoryPage() {
         <section className="history-grid">
           <div className="history-list">
             <p aria-live="polite" className="form-help">
-              {isLoading ? "Memuat riwayat rute..." : data?.source === "mock" ? "Menampilkan riwayat mock." : null}
+              {isLoading ? "Memuat riwayat rute dari Firestore..." : data?.source === "api" ? "Menampilkan riwayat Firestore." : null}
             </p>
-            {routeHistory.map((item) => {
+            {routeHistory.length > 0 ? routeHistory.map((item) => {
               const tone = item.score >= 70 ? "healthy" : item.score >= 40 ? "caution" : "danger";
               return (
                 <Link href={`/result/${item.id}`} className="history-item" key={item.id}>
@@ -61,7 +60,13 @@ export default function HistoryPage() {
                   </div>
                 </Link>
               );
-            })}
+            }) : (
+              <p className="empty-state">
+                {error
+                  ? "Riwayat real belum bisa dimuat. Pastikan sudah login dan Firestore terkonfigurasi."
+                  : "Belum ada riwayat. Jalankan analisis rute untuk menyimpan hasil real pertama."}
+              </p>
+            )}
           </div>
           <aside className="history-preview">
             <MapVisual compact selected="healthy" label="Preview rute dari riwayat" />
