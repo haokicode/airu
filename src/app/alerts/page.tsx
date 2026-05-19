@@ -4,10 +4,13 @@ import { AlertTriangle, BellRing, MapPinned } from "lucide-react";
 import { AppShell } from "@/components/app-shell";
 import { Badge, LinkButton } from "@/components/ui";
 import { useAQICurrent } from "@/hooks/use-aqi-current";
-import { alerts } from "@/lib/mock-data";
+import { useProfileStore } from "@/stores/profile-store";
 
 export default function AlertsPage() {
-  const { data: currentAQI, isLoading } = useAQICurrent({ lat: -6.2146, lng: 106.8217 });
+  const alertAQIThreshold = useProfileStore((state) => state.alertAQIThreshold);
+  const { data: currentAQI, error, isLoading } = useAQICurrent({ lat: -6.2146, lng: 106.8217 });
+  const isRisky = currentAQI ? currentAQI.aqi >= alertAQIThreshold : false;
+  const tone = isRisky ? "danger" : currentAQI && currentAQI.aqi < 70 ? "healthy" : "caution";
 
   return (
     <AppShell>
@@ -20,12 +23,10 @@ export default function AlertsPage() {
 
         <section className="list-grid-layout">
           <div className="alert-list">
-            {alerts.map((alert) => {
-              const tone = alert.status === "Berisiko" ? "danger" : alert.status === "Membaik" ? "healthy" : "caution";
-              return (
-                <article className={`alert-item ${alert.unread ? "unread" : ""}`} key={alert.id}>
+            {currentAQI ? (
+                <article className={`alert-item ${isRisky ? "unread" : ""}`}>
                   <div className="alert-icon">
-                    {alert.status === "Berisiko" ? (
+                    {isRisky ? (
                       <AlertTriangle aria-hidden="true" />
                     ) : (
                       <BellRing aria-hidden="true" />
@@ -33,18 +34,27 @@ export default function AlertsPage() {
                   </div>
                   <div>
                     <div className="alert-title-row">
-                      <h2>{alert.title}</h2>
-                      <Badge tone={tone}>{alert.status}</Badge>
+                      <h2>AQI Sudirman {currentAQI.aqi}</h2>
+                      <Badge tone={tone}>{isRisky ? "Berisiko" : currentAQI.category}</Badge>
                     </div>
-                    <p>{alert.description}</p>
+                    <p>
+                      Data AQI real dari provider aktif. Ambang profil kamu saat ini AQI {alertAQIThreshold}.
+                    </p>
                     <div className="metric-grid compact">
-                      <span>AQI {alert.aqi}</span>
-                      <span>{alert.time}</span>
+                      <span>PM2.5 {currentAQI.pm25} ug/m3</span>
+                      <span>{new Date(currentAQI.updatedAt).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" })}</span>
                     </div>
                   </div>
                 </article>
-              );
-            })}
+            ) : (
+              <p className="empty-state" aria-live="polite">
+                {isLoading
+                  ? "Memuat AQI real..."
+                  : error
+                    ? "AQI real belum bisa dimuat. Pastikan sudah login dan Google Air Quality API aktif."
+                    : "Belum ada data AQI."}
+              </p>
+            )}
           </div>
 
           <aside className="alert-detail-panel">

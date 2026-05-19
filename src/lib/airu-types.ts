@@ -15,17 +15,24 @@ export type RouteAnalysisParams = {
   destination: PlacePoint;
   travelMode: TravelMode;
   conditions?: string[];
+  familyMode?: boolean;
 };
 
 export type RouteAnalysisResult = {
+  routeAnalysisId?: string;
+  origin?: PlacePoint;
+  destination?: PlacePoint;
+  travelMode?: TravelMode;
   routes: RouteOption[];
   recommendedRouteId: RouteChoiceId;
   summary: string;
+  aiRecommendation?: string | null;
   source: "api" | "mock";
   analyzedAt: string;
 };
 
 export type AIRecommendBody = {
+  routeAnalysisId?: string;
   routeId: RouteChoiceId;
   origin: string;
   destination: string;
@@ -34,9 +41,13 @@ export type AIRecommendBody = {
 };
 
 export type CurrentAQI = {
+  geohash?: string;
   aqi: number;
   pm25: number;
+  pm10?: number | null;
   category: string;
+  stale?: boolean;
+  source?: "cache" | "google" | "mock";
   updatedAt: string;
   location: PlacePoint;
 };

@@ -1,14 +1,19 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Bell, Bike, Footprints, Save, ShieldCheck, SlidersHorizontal } from "lucide-react";
 import { AppShell } from "@/components/app-shell";
 import { Button, LinkButton } from "@/components/ui";
 import { profileConditions } from "@/lib/mock-data";
 import { useProfileStore } from "@/stores/profile-store";
+import { fetchJson } from "@/lib/api-client";
+import { useAuthStore } from "@/stores/auth-store";
+import type { TravelMode } from "@/lib/airu-types";
 
 export default function ProfilePage() {
   const [saved, setSaved] = useState(false);
+  const [isSyncing, setIsSyncing] = useState(false);
+  const isLoggedIn = useAuthStore((state) => state.isLoggedIn);
   const conditions = useProfileStore((state) => state.conditions);
   const travelMode = useProfileStore((state) => state.travelMode);
   const familyMode = useProfileStore((state) => state.familyMode);
@@ -17,6 +22,48 @@ export default function ProfilePage() {
   const setTravelMode = useProfileStore((state) => state.setTravelMode);
   const setFamilyMode = useProfileStore((state) => state.setFamilyMode);
   const setAlertAQIThreshold = useProfileStore((state) => state.setAlertAQIThreshold);
+  const setConditions = useProfileStore((state) => state.setConditions);
+
+  useEffect(() => {
+    if (isLoggedIn) {
+      fetchJson<{
+        travelMode?: TravelMode;
+        conditions?: string[];
+        familyMode?: boolean;
+        alertAQIThreshold?: number;
+      }>("/api/profile")
+        .then((data) => {
+          if (data.travelMode) setTravelMode(data.travelMode);
+          if (data.conditions) setConditions(data.conditions);
+          if (data.familyMode !== undefined) setFamilyMode(data.familyMode);
+          if (data.alertAQIThreshold) setAlertAQIThreshold(data.alertAQIThreshold);
+        })
+        .catch(console.error);
+    }
+  }, [isLoggedIn]);
+
+  const handleSave = async () => {
+    setIsSyncing(true);
+    try {
+      if (isLoggedIn) {
+        await fetchJson("/api/profile", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            travelMode,
+            conditions,
+            familyMode,
+            alertAQIThreshold,
+          }),
+        });
+      }
+      setSaved(true);
+    } catch (error) {
+      console.error("Failed to save profile:", error);
+    } finally {
+      setIsSyncing(false);
+    }
+  };
 
   return (
     <AppShell>
@@ -161,9 +208,8 @@ export default function ProfilePage() {
             <div className="profile-actions">
               <Button
                 icon={Save}
-                onClick={() => {
-                  setSaved(true);
-                }}
+                loading={isSyncing}
+                onClick={handleSave}
               >
                 Simpan profil
               </Button>
@@ -172,7 +218,7 @@ export default function ProfilePage() {
               </LinkButton>
             </div>
             <p aria-live="polite" className="form-help">
-              {saved ? "Profil disimpan di state lokal dan siap dipakai saat analisis rute." : null}
+              {saved ? "Profil berhasil disimpan ke cloud dan siap dipakai." : null}
             </p>
           </aside>
         </section>

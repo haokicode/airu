@@ -363,12 +363,12 @@ State 3 — Expanded (user taps route card)
 
 ### Aktivitas
 
-- [ ] Setup project structure + dependency management
-- [ ] Setup Firebase (Auth, Firestore, FCM, Cloud Functions)
-- [ ] Implementasi Firestore Security Rules
-- [ ] Implementasi REST API endpoints
-- [ ] Implementasi autentikasi (Firebase session cookie)
-- [ ] Input validation, error handling, logging
+- [x] Setup project structure + dependency management
+- [x] Setup Firebase (Auth, Firestore, FCM, Cloud Functions)
+- [x] Implementasi Firestore Security Rules
+- [x] Implementasi REST API endpoints
+- [x] Implementasi autentikasi (Firebase session cookie)
+- [x] Input validation, error handling, logging
 
 ---
 

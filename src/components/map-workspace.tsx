@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useJsApiLoader } from "@react-google-maps/api";
 import { useForm } from "react-hook-form";
 import Link from "next/link";
 import {
@@ -16,7 +17,9 @@ import {
   X,
 } from "lucide-react";
 import type { PlacePoint, RouteChoiceId, TravelMode } from "@/lib/airu-types";
-import { defaultDestination, defaultOrigin, placeSuggestions, routes } from "@/lib/mock-data";
+import { defaultDestination, defaultOrigin, placeSuggestions } from "@/lib/mock-data";
+import { ApiRequestError } from "@/lib/api-client";
+import { getPublicGoogleMapsApiKey, googleMapsLibraries } from "@/lib/google-maps/client";
 import { routeFormSchema, type RouteFormValues } from "@/schemas/route-form";
 import { useRouteAnalysis } from "@/hooks/use-route-analysis";
 import { useStreamingAI } from "@/hooks/use-streaming-ai";
@@ -30,6 +33,11 @@ import { SegmentList } from "@/components/segment-list";
 
 type SheetState = "collapsed" | "mid" | "expanded";
 type LocationField = "origin" | "destination";
+type PlacePrediction = {
+  placeId: string;
+  label: string;
+  description: string;
+};
 
 function toRouteChoiceId(routeId: string): RouteChoiceId {
   return routeId === "fastest" ? "fastest" : "healthy";
@@ -39,9 +47,31 @@ function routeModeLabel(travelMode: TravelMode) {
   return travelMode === "BICYCLE" ? "Sepeda" : "Jalan kaki";
 }
 
+function getRouteErrorMessage(error: unknown) {
+  if (error instanceof ApiRequestError) {
+    if (error.status === 401) {
+      return "Masuk dulu agar Airu bisa mengambil data rute dan AQI real.";
+    }
+    if (error.status === 400) {
+      return "Lokasi belum valid. Pilih saran Google Places atau gunakan GPS.";
+    }
+    return `Analisis gagal (${error.status}). Periksa konfigurasi Google API dan coba lagi.`;
+  }
+
+  return "Analisis gagal. Periksa koneksi dan konfigurasi provider real.";
+}
+
 export function MapWorkspace() {
   const [sheetState, setSheetState] = useState<SheetState>("mid");
   const [activeLocationField, setActiveLocationField] = useState<LocationField>("destination");
+  const [predictions, setPredictions] = useState<PlacePrediction[]>([]);
+  const [isResolvingPlace, setIsResolvingPlace] = useState(false);
+  const apiKey = getPublicGoogleMapsApiKey();
+  const { isLoaded: isPlacesLoaded } = useJsApiLoader({
+    id: "google-map-script",
+    googleMapsApiKey: apiKey,
+    libraries: googleMapsLibraries,
+  });
   const origin = useMapStore((state) => state.origin);
   const destination = useMapStore((state) => state.destination);
   const activeRoute = useMapStore((state) => state.activeRoute);
@@ -52,6 +82,7 @@ export function MapWorkspace() {
   const setRouteRequest = useMapStore((state) => state.setRouteRequest);
   const conditions = useProfileStore((state) => state.conditions);
   const profileTravelMode = useProfileStore((state) => state.travelMode);
+  const familyMode = useProfileStore((state) => state.familyMode);
   const setProfileTravelMode = useProfileStore((state) => state.setTravelMode);
   const routeAnalysis = useRouteAnalysis();
   const { text: aiText, loading: aiLoading, generate } = useStreamingAI();
@@ -74,9 +105,13 @@ export function MapWorkspace() {
   });
 
   const travelMode = watch("travelMode");
-  const analyzedRoutes = routeAnalysis.data?.routes ?? routes;
+  const watchedOriginAddress = watch("origin.address");
+  const watchedDestinationAddress = watch("destination.address");
+  const activeAddress = activeLocationField === "origin" ? watchedOriginAddress : watchedDestinationAddress;
+  const analyzedRoutes = routeAnalysis.data?.routes ?? [];
+  const hasAnalysis = analyzedRoutes.length > 0;
   const selected = useMemo(
-    () => analyzedRoutes.find((route) => route.id === activeRoute) ?? analyzedRoutes[0],
+    () => analyzedRoutes.find((route) => route.id === activeRoute) ?? analyzedRoutes[0] ?? null,
     [activeRoute, analyzedRoutes],
   );
   const recommendation =
@@ -84,7 +119,7 @@ export function MapWorkspace() {
       ? "Menyiapkan rekomendasi AI..."
       : aiText ||
         routeAnalysis.data?.summary ||
-        "Pilih rute sehat untuk perjalanan siang ini. Durasi bertambah 5 menit, tetapi paparan AQI tinggi turun signifikan dan segmen teduh lebih panjang.";
+        "Pilih lokasi asal dan tujuan, lalu jalankan analisis untuk mengambil data Google Routes, AQI, dan rekomendasi AI real.";
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
@@ -96,6 +131,47 @@ export function MapWorkspace() {
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
   }, []);
+
+  useEffect(() => {
+    if (!apiKey || !isPlacesLoaded || activeAddress.trim().length < 3) {
+      setPredictions([]);
+      return;
+    }
+
+    let cancelled = false;
+    const service = new google.maps.places.AutocompleteService();
+    const timer = window.setTimeout(() => {
+      service.getPlacePredictions(
+        {
+          input: activeAddress,
+          componentRestrictions: { country: "id" },
+        },
+        (results, status) => {
+          if (cancelled) {
+            return;
+          }
+
+          if (status !== google.maps.places.PlacesServiceStatus.OK || !results) {
+            setPredictions([]);
+            return;
+          }
+
+          setPredictions(
+            results.slice(0, 5).map((result) => ({
+              placeId: result.place_id,
+              label: result.structured_formatting?.main_text ?? result.description,
+              description: result.description,
+            })),
+          );
+        },
+      );
+    }, 250);
+
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+    };
+  }, [activeAddress, apiKey, isPlacesLoaded]);
 
   useEffect(() => {
     if (!location) {
@@ -125,6 +201,56 @@ export function MapWorkspace() {
     setDestination(place);
   };
 
+  const resolvePlaceId = async (field: LocationField, prediction: PlacePrediction) => {
+    if (!isPlacesLoaded) {
+      return;
+    }
+
+    setIsResolvingPlace(true);
+    try {
+      const geocoder = new google.maps.Geocoder();
+      const response = await geocoder.geocode({ placeId: prediction.placeId });
+      const result = response.results[0];
+      const location = result?.geometry.location;
+      if (!location) {
+        return;
+      }
+
+      setPlace(field, {
+        address: result.formatted_address || prediction.description,
+        lat: location.lat(),
+        lng: location.lng(),
+      });
+      setPredictions([]);
+    } finally {
+      setIsResolvingPlace(false);
+    }
+  };
+
+  const resolveTypedPlace = async (place: PlacePoint): Promise<PlacePoint> => {
+    if (!apiKey || !isPlacesLoaded || place.address === "Lokasi saya sekarang") {
+      return place;
+    }
+
+    const geocoder = new google.maps.Geocoder();
+    const response = await geocoder.geocode({
+      address: place.address,
+      componentRestrictions: { country: "ID" },
+    });
+    const result = response.results[0];
+    const location = result?.geometry.location;
+
+    if (!location) {
+      return place;
+    }
+
+    return {
+      address: result.formatted_address || place.address,
+      lat: location.lat(),
+      lng: location.lng(),
+    };
+  };
+
   const setTravelMode = (nextMode: TravelMode) => {
     setValue("travelMode", nextMode, { shouldDirty: true, shouldValidate: true });
     setMapTravelMode(nextMode);
@@ -132,32 +258,54 @@ export function MapWorkspace() {
   };
 
   const onSubmit = async (values: RouteFormValues) => {
-    setRouteRequest(values);
+    setIsResolvingPlace(true);
     setSheetState("mid");
 
     try {
-      const result = await routeAnalysis.mutateAsync({
+      const resolvedOrigin = await resolveTypedPlace(values.origin);
+      const resolvedDestination = await resolveTypedPlace(values.destination);
+      const request = {
         ...values,
+        origin: resolvedOrigin,
+        destination: resolvedDestination,
+        conditions,
+        familyMode,
+      };
+      setRouteRequest(request);
+      setOrigin(resolvedOrigin);
+      setDestination(resolvedDestination);
+
+      const result = await routeAnalysis.mutateAsync({
+        ...request,
         conditions,
       });
       const recommendedRoute = result.recommendedRouteId;
       setActiveRoute(recommendedRoute);
       setSheetState("expanded");
       await generate({
+        routeAnalysisId: result.routeAnalysisId,
         routeId: recommendedRoute,
-        origin: values.origin.address,
-        destination: values.destination.address,
-        travelMode: values.travelMode,
+        origin: resolvedOrigin.address,
+        destination: resolvedDestination.address,
+        travelMode: request.travelMode,
         conditions,
       });
     } catch {
       setSheetState("mid");
+    } finally {
+      setIsResolvingPlace(false);
     }
   };
 
   return (
     <main className="map-workspace">
-      <MapVisual selected={activeRoute} label={`Peta rute dari ${origin.address} ke ${destination.address}`} />
+      <MapVisual
+        destination={destination}
+        origin={origin}
+        routes={analyzedRoutes}
+        selected={activeRoute}
+        label={`Peta rute dari ${origin.address} ke ${destination.address}`}
+      />
 
       <nav className="map-floating-nav" aria-label="Navigasi peta">
         <Link href="/" aria-label="Kembali ke beranda">
@@ -238,7 +386,12 @@ export function MapWorkspace() {
         </div>
 
         <div className="map-search-actions">
-          <Button data-testid="search-route-btn" icon={Search} loading={routeAnalysis.isPending} type="submit">
+          <Button
+            data-testid="search-route-btn"
+            icon={Search}
+            loading={routeAnalysis.isPending || isResolvingPlace}
+            type="submit"
+          >
             Analisis rute
           </Button>
           <IconButton
@@ -250,30 +403,49 @@ export function MapWorkspace() {
           <IconButton label="Filter kesehatan rute" icon={SlidersHorizontal} />
         </div>
         <div className="suggestion-list" aria-label={`Saran lokasi untuk ${activeLocationField}`}>
-          {placeSuggestions.map((suggestion, index) => {
-            const Icon = suggestion.icon;
-            return (
-              <button
-                data-testid={`${activeLocationField}-suggestion-${index}`}
-                key={suggestion.label}
-                type="button"
-                onClick={() =>
-                  setPlace(activeLocationField, {
-                    address: suggestion.label,
-                    lat: suggestion.lat,
-                    lng: suggestion.lng,
-                  })
-                }
-              >
-                <Icon aria-hidden="true" />
-                <span>{suggestion.label}</span>
-              </button>
-            );
-          })}
+          {apiKey && isPlacesLoaded ? (
+            predictions.length > 0 ? (
+              predictions.map((prediction, index) => (
+                <button
+                  data-testid={`${activeLocationField}-suggestion-${index}`}
+                  key={prediction.placeId}
+                  type="button"
+                  onClick={() => resolvePlaceId(activeLocationField, prediction)}
+                >
+                  <Search aria-hidden="true" />
+                  <span>{prediction.description}</span>
+                </button>
+              ))
+            ) : activeAddress.trim().length >= 3 ? (
+              <span className="suggestion-empty">Tidak ada saran Google Places untuk input ini.</span>
+            ) : null
+          ) : (
+            placeSuggestions.map((suggestion, index) => {
+              const Icon = suggestion.icon;
+              return (
+                <button
+                  data-testid={`${activeLocationField}-suggestion-${index}`}
+                  key={suggestion.label}
+                  type="button"
+                  onClick={() =>
+                    setPlace(activeLocationField, {
+                      address: suggestion.label,
+                      lat: suggestion.lat,
+                      lng: suggestion.lng,
+                    })
+                  }
+                >
+                  <Icon aria-hidden="true" />
+                  <span>{suggestion.label}</span>
+                </button>
+              );
+            })
+          )}
         </div>
         <div aria-live="polite" className="form-status">
           <span>Mode: {routeModeLabel(travelMode)}</span>
-          {routeAnalysis.data?.source === "mock" ? <span>Data mock aktif sampai API backend tersedia.</span> : null}
+          {routeAnalysis.data?.source === "api" ? <span>Data real Google Routes dan AQI aktif.</span> : null}
+          {routeAnalysis.data?.source === "mock" ? <span>Fallback mock aktif. Periksa konfigurasi provider.</span> : null}
         </div>
         {locationError ? (
           <p className="form-alert" role="alert">
@@ -282,7 +454,7 @@ export function MapWorkspace() {
         ) : null}
         {routeAnalysis.error ? (
           <p className="form-alert" role="alert">
-            Analisis API gagal. Coba lagi setelah endpoint backend tersedia.
+            {getRouteErrorMessage(routeAnalysis.error)}
           </p>
         ) : null}
       </form>
@@ -326,7 +498,7 @@ export function MapWorkspace() {
         </div>
 
         <div className="route-choice-grid" data-testid="route-compare">
-          {analyzedRoutes.map((route) => {
+          {hasAnalysis ? analyzedRoutes.map((route) => {
             const routeId = toRouteChoiceId(route.id);
             return (
               <button
@@ -344,11 +516,11 @@ export function MapWorkspace() {
                 <em>Skor {route.score}</em>
               </button>
             );
-          })}
+          }) : <p className="empty-state">Hasil rute real akan muncul setelah analisis berhasil.</p>}
         </div>
 
         <div className="sheet-scroll">
-          {analyzedRoutes.map((route) => {
+          {hasAnalysis ? analyzedRoutes.map((route) => {
             const routeId = toRouteChoiceId(route.id);
             return (
               <div
@@ -367,11 +539,13 @@ export function MapWorkspace() {
                 <RouteCard route={route} selected={activeRoute === routeId} />
               </div>
             );
-          })}
+          }) : null}
 
-          <LinkButton href="/result/demo-route" className="full-width">
-            Buka detail rute
-          </LinkButton>
+          {routeAnalysis.data?.routeAnalysisId ? (
+            <LinkButton href={`/result/${routeAnalysis.data.routeAnalysisId}`} className="full-width">
+              Buka detail rute
+            </LinkButton>
+          ) : null}
 
           <section className="ai-recommendation" aria-live="polite" data-testid="ai-recommendation">
             <span className="eyebrow">Rekomendasi AI</span>
@@ -381,9 +555,9 @@ export function MapWorkspace() {
           <section className="sheet-detail-block">
             <div className="section-heading compact-heading">
               <span className="eyebrow">Detail segmen</span>
-              <h2>{selected.label}</h2>
+              <h2>{selected?.label ?? "Belum ada hasil"}</h2>
             </div>
-            <SegmentList segments={selected.segments} />
+            {selected ? <SegmentList segments={selected.segments} /> : <p className="form-help">Jalankan analisis untuk melihat segmen AQI real.</p>}
           </section>
         </div>
       </aside>

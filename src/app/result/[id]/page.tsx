@@ -1,3 +1,4 @@
+import { notFound } from "next/navigation";
 import { ArrowLeft, Download, Navigation, Share2 } from "lucide-react";
 import Link from "next/link";
 import { AppShell } from "@/components/app-shell";
@@ -5,11 +6,45 @@ import { MapVisual } from "@/components/map-visual";
 import { RouteCard } from "@/components/route-card";
 import { SegmentList } from "@/components/segment-list";
 import { Button, IconButton, LinkButton } from "@/components/ui";
-import { routes } from "@/lib/mock-data";
+import { getAdminDb } from "@/lib/firebase/admin";
+import type { RouteAnalysisResult } from "@/lib/airu-types";
 
-export default function ResultPage() {
-  const healthy = routes[0];
-  const fastest = routes[1];
+type Props = {
+  params: Promise<{ id: string }>;
+};
+
+export default async function ResultPage({ params }: Props) {
+  const { id } = await params;
+
+  if (id === "demo-route") {
+    // Handle demo route for preview/testing
+    const { routes: mockRoutes } = await import("@/lib/mock-data");
+    return <ResultView id="demo" result={{
+      routes: mockRoutes,
+      recommendedRouteId: "healthy",
+      summary: "Ini adalah rute demo untuk pengujian UI.",
+      source: "mock",
+      analyzedAt: new Date().toISOString()
+    }} />;
+  }
+
+  const db = getAdminDb();
+  if (!db) {
+    return notFound();
+  }
+
+  const doc = await db.collection("routes").doc(id).get();
+  if (!doc.exists) {
+    return notFound();
+  }
+
+  const data = doc.data() as RouteAnalysisResult;
+  return <ResultView id={id} result={data} />;
+}
+
+function ResultView({ id, result }: { id: string; result: RouteAnalysisResult }) {
+  const healthy = result.routes.find((r) => r.id === "healthy") ?? result.routes[0];
+  const fastest = result.routes.find((r) => r.id === "fastest") ?? result.routes[1];
 
   return (
     <AppShell>
@@ -26,26 +61,29 @@ export default function ResultPage() {
         </div>
 
         <section className="result-hero">
-          <MapVisual selected="healthy" label="Detail rute sehat dari Tebet ke Sudirman" />
+          <MapVisual
+            destination={result.destination}
+            origin={result.origin}
+            selected="healthy"
+            routes={result.routes}
+            label={`Detail rute dari ${id}`}
+          />
           <aside className="result-summary">
             <span className="eyebrow">Hasil analisis</span>
-            <h1>Rute sehat direkomendasikan.</h1>
-            <p>
-              Tambahan 5 menit mengurangi paparan segmen AQI tinggi dan memberi jalur yang lebih teduh untuk profil
-              sensitif.
-            </p>
+            <h1>{result.recommendedRouteId === "healthy" ? "Rute sehat direkomendasikan." : "Rute tercepat dipilih."}</h1>
+            <p>{result.summary}</p>
             <div className="result-metrics">
               <div>
-                <strong>81</strong>
+                <strong>{healthy.score}</strong>
                 <span>Skor sehat</span>
               </div>
               <div>
-                <strong>28 min</strong>
+                <strong>{healthy.duration}</strong>
                 <span>Durasi</span>
               </div>
               <div>
-                <strong>AQI 64</strong>
-                <span>Sedang</span>
+                <strong>AQI {healthy.aqi}</strong>
+                <span>{healthy.aqiLabel}</span>
               </div>
             </div>
             <Button icon={Navigation}>Mulai rute sehat</Button>
@@ -54,16 +92,14 @@ export default function ResultPage() {
 
         <section className="result-content-grid">
           <div className="route-stack">
-            <RouteCard route={healthy} selected />
-            <RouteCard route={fastest} />
+            <RouteCard route={healthy} selected={result.recommendedRouteId === "healthy"} />
+            {fastest && <RouteCard route={fastest} selected={result.recommendedRouteId === "fastest"} />}
           </div>
           <aside className="ai-card" aria-live="polite">
             <span className="eyebrow">Rekomendasi AI</span>
-            <h2>Berangkat lewat rute sehat.</h2>
+            <h2>{result.recommendedRouteId === "healthy" ? "Berangkat lewat rute sehat." : "Rute tercepat tersedia."}</h2>
             <p>
-              Rute sehat lebih cocok untuk profil asma karena menghindari koridor lalu lintas berat. Gunakan masker jika
-              harus melewati persimpangan padat dengan AQI 96, dan pertahankan kecepatan jalan santai saat panas
-              meningkat.
+              {result.aiRecommendation ?? "Gunakan detail segmen di bawah untuk melihat titik-titik dengan paparan polusi tinggi atau area yang kurang teduh."}
             </p>
             <LinkButton href="/history" variant="secondary">
               Lihat riwayat

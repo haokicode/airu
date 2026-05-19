@@ -10,6 +10,7 @@ type ProfileState = {
   familyMode: boolean;
   alertAQIThreshold: number;
   toggleCondition: (conditionId: string) => void;
+  setConditions: (conditions: string[]) => void;
   setTravelMode: (travelMode: TravelMode) => void;
   setFcmToken: (fcmToken: string | null) => void;
   setFamilyMode: (enabled: boolean) => void;
@@ -28,6 +29,7 @@ export const useProfileStore = create<ProfileState>((set) => ({
         ? state.conditions.filter((id) => id !== conditionId)
         : [...state.conditions, conditionId],
     })),
+  setConditions: (conditions) => set({ conditions }),
   setTravelMode: (travelMode) => set({ travelMode }),
   setFcmToken: (fcmToken) => set({ fcmToken }),
   setFamilyMode: (familyMode) => set({ familyMode }),

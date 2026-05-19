@@ -13,6 +13,7 @@ tags:
   - name: Air Quality
   - name: Route
   - name: AI
+  - name: History
 security:
   - sessionCookie: []
 paths:
@@ -76,7 +77,11 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/AQIResponse"
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    $ref: "#/components/schemas/AQIResponse"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -98,7 +103,11 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/RouteAnalysisResponse"
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    $ref: "#/components/schemas/RouteAnalysisResponse"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -126,7 +135,7 @@ paths:
         "200":
           description: Streaming recommendation text.
           content:
-            text/event-stream:
+            text/plain:
               schema:
                 type: string
         "400":
@@ -135,6 +144,24 @@ paths:
           $ref: "#/components/responses/Unauthorized"
         "429":
           $ref: "#/components/responses/RateLimited"
+
+  /api/history:
+    get:
+      tags: [History]
+      summary: Get route history for the signed-in user.
+      responses:
+        "200":
+          description: Route history.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    $ref: "#/components/schemas/HistoryResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
 
 components:
   securitySchemes:
@@ -209,14 +236,10 @@ components:
 
     AQIResponse:
       type: object
-      required: [geohash, lat, lng, aqi, category, fetchedAt, stale]
+      required: [aqi, pm25, category, updatedAt, location]
       properties:
         geohash:
           type: string
-        lat:
-          type: number
-        lng:
-          type: number
         aqi:
           type: integer
           minimum: 0
@@ -230,11 +253,16 @@ components:
             - "null"
         category:
           type: string
-        fetchedAt:
+        updatedAt:
           type: string
           format: date-time
         stale:
           type: boolean
+        source:
+          type: string
+          enum: [cache, google, mock]
+        location:
+          $ref: "#/components/schemas/LocationInput"
 
     RouteSegment:
       type: object
@@ -330,26 +358,89 @@ components:
 
     RouteAnalysisResponse:
       type: object
-      required: [id, fastest, healthiest, createdAt]
+      required: [routes, recommendedRouteId, summary, source, analyzedAt]
       properties:
-        id:
+        routeAnalysisId:
           type: string
-        fastest:
-          $ref: "#/components/schemas/ScoredRoute"
-        healthiest:
-          $ref: "#/components/schemas/ScoredRoute"
-        createdAt:
+        routes:
+          type: array
+          minItems: 1
+          items:
+            $ref: "#/components/schemas/RouteOption"
+        recommendedRouteId:
+          type: string
+          enum: [healthy, fastest]
+        summary:
+          type: string
+        source:
+          type: string
+          enum: [api, mock]
+        analyzedAt:
           type: string
           format: date-time
 
+    RouteOption:
+      type: object
+      required: [id, label, summary, duration, distance, score, aqi, aqiLabel, segments]
+      properties:
+        id:
+          type: string
+          enum: [healthy, fastest]
+        label:
+          type: string
+        summary:
+          type: string
+        duration:
+          type: string
+        distance:
+          type: string
+        score:
+          type: integer
+          minimum: 0
+          maximum: 100
+        aqi:
+          type: integer
+          minimum: 0
+        aqiLabel:
+          type: string
+        delta:
+          type: string
+        recommended:
+          type: boolean
+        segments:
+          type: array
+          items:
+            type: object
+            required: [name, distance, aqi, label, risk]
+            properties:
+              name:
+                type: string
+              distance:
+                type: string
+              aqi:
+                type: integer
+              label:
+                type: string
+              risk:
+                $ref: "#/components/schemas/RiskLevel"
+
     AIRecommendationRequest:
       type: object
-      required: [routeAnalysisId, selectedRouteId, language]
+      required: [language]
       properties:
         routeAnalysisId:
           type: string
         selectedRouteId:
           type: string
+        routeId:
+          type: string
+          enum: [healthy, fastest]
+        origin:
+          type: string
+        destination:
+          type: string
+        travelMode:
+          $ref: "#/components/schemas/TravelMode"
         language:
           type: string
           enum: [id]
@@ -362,3 +453,36 @@ components:
                 type: string
             familyMode:
               type: boolean
+
+    HistoryResponse:
+      type: object
+      required: [items, source]
+      properties:
+        source:
+          type: string
+          enum: [api, mock]
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/HistoryItem"
+
+    HistoryItem:
+      type: object
+      required: [id, from, to, date, score, aqi, duration, distance]
+      properties:
+        id:
+          type: string
+        from:
+          type: string
+        to:
+          type: string
+        date:
+          type: string
+        score:
+          type: integer
+        aqi:
+          type: integer
+        duration:
+          type: string
+        distance:
+          type: string
