@@ -12,6 +12,7 @@ import {
   Users,
   Wind,
 } from "lucide-react";
+import type { PlacePoint } from "@/lib/airu-types";
 
 export type RiskLevel = "healthy" | "caution" | "danger";
 
@@ -64,6 +65,18 @@ export type ProfileCondition = {
   description: string;
   icon: LucideIcon;
   selected?: boolean;
+};
+
+export const defaultOrigin: PlacePoint = {
+  address: "Rumah, Tebet",
+  lat: -6.2297,
+  lng: 106.8523,
+};
+
+export const defaultDestination: PlacePoint = {
+  address: "Kantor, Sudirman",
+  lat: -6.2146,
+  lng: 106.8217,
 };
 
 export const routes: RouteOption[] = [
@@ -251,8 +264,8 @@ export const navItems = [
 ];
 
 export const placeSuggestions = [
-  { label: "Rumah, Tebet", icon: Home },
-  { label: "Kantor, Sudirman", icon: Building2 },
-  { label: "Jalur taman dekat Karet", icon: Trees },
-  { label: "Mode sepeda ke MRT", icon: Bike },
+  { label: "Rumah, Tebet", icon: Home, lat: -6.2297, lng: 106.8523 },
+  { label: "Kantor, Sudirman", icon: Building2, lat: -6.2146, lng: 106.8217 },
+  { label: "Jalur taman dekat Karet", icon: Trees, lat: -6.2139, lng: 106.8162 },
+  { label: "Mode sepeda ke MRT", icon: Bike, lat: -6.2099, lng: 106.8208 },
 ];

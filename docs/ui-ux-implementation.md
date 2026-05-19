@@ -9,6 +9,7 @@ UI/UX telah diimplementasikan sebagai aplikasi Next.js oleh agen Codex. Berikut 
 - **Styling**: Global responsive styling dan implementasi design token (di `src/app/globals.css`).
 - **Project Setup**: Scripts, dependency lock, lint config, README, dan `.gitignore` telah disiapkan.
 - **Checklist Frontend**: Item yang sudah divalidasi telah ditandai pada `issue.md`.
+- **Frontend Development Guide Bagian 4**: React Query provider, Zustand stores, API hooks, route form validation dengan React Hook Form + Zod, GPS hook, dan a11y states telah ditambahkan.
 
 ## Status Server
 Dev server sudah berjalan di:
@@ -25,3 +26,4 @@ Dev server sudah berjalan di:
 - PRD awal menyebutkan Next 14, tapi di environment lokal Node 24, native SWC Next 14 gagal load.
 - Solusi: Menggunakan Next 16.2.6 dan script dev/build menggunakan flag `--webpack` agar build/dev server stabil di mesin ini.
 - Backend/API integration belum dikerjakan; UI saat ini masih menggunakan *mock data*.
+- Hook frontend sudah memanggil kontrak endpoint `/api/route/analyze`, `/api/ai/recommend`, `/api/aqi/current`, dan `/api/history`; selama endpoint backend belum tersedia, UI memakai fallback mock agar alur tetap dapat dicoba.

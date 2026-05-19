@@ -1,11 +1,17 @@
+"use client";
+
 import { CalendarDays, MapPinned, TrendingDown } from "lucide-react";
 import Link from "next/link";
 import { AppShell } from "@/components/app-shell";
 import { Badge, LinkButton } from "@/components/ui";
 import { MapVisual } from "@/components/map-visual";
+import { useHistory } from "@/hooks/use-history";
 import { history } from "@/lib/mock-data";
 
 export default function HistoryPage() {
+  const { data, isLoading } = useHistory();
+  const routeHistory = data?.items ?? history;
+
   return (
     <AppShell>
       <main className="history-layout container">
@@ -35,7 +41,10 @@ export default function HistoryPage() {
 
         <section className="history-grid">
           <div className="history-list">
-            {history.map((item) => {
+            <p aria-live="polite" className="form-help">
+              {isLoading ? "Memuat riwayat rute..." : data?.source === "mock" ? "Menampilkan riwayat mock." : null}
+            </p>
+            {routeHistory.map((item) => {
               const tone = item.score >= 70 ? "healthy" : item.score >= 40 ? "caution" : "danger";
               return (
                 <Link href={`/result/${item.id}`} className="history-item" key={item.id}>

@@ -1,9 +1,23 @@
+"use client";
+
+import { useState } from "react";
 import { Bell, Bike, Footprints, Save, ShieldCheck, SlidersHorizontal } from "lucide-react";
 import { AppShell } from "@/components/app-shell";
 import { Button, LinkButton } from "@/components/ui";
 import { profileConditions } from "@/lib/mock-data";
+import { useProfileStore } from "@/stores/profile-store";
 
 export default function ProfilePage() {
+  const [saved, setSaved] = useState(false);
+  const conditions = useProfileStore((state) => state.conditions);
+  const travelMode = useProfileStore((state) => state.travelMode);
+  const familyMode = useProfileStore((state) => state.familyMode);
+  const alertAQIThreshold = useProfileStore((state) => state.alertAQIThreshold);
+  const toggleCondition = useProfileStore((state) => state.toggleCondition);
+  const setTravelMode = useProfileStore((state) => state.setTravelMode);
+  const setFamilyMode = useProfileStore((state) => state.setFamilyMode);
+  const setAlertAQIThreshold = useProfileStore((state) => state.setAlertAQIThreshold);
+
   return (
     <AppShell>
       <main className="profile-layout container">
@@ -28,8 +42,18 @@ export default function ProfilePage() {
             <div className="condition-grid">
               {profileConditions.map((condition) => {
                 const Icon = condition.icon;
+                const selected = conditions.includes(condition.id);
                 return (
-                  <button className={`condition-card ${condition.selected ? "selected" : ""}`} key={condition.id}>
+                  <button
+                    aria-pressed={selected}
+                    className={`condition-card ${selected ? "selected" : ""}`}
+                    key={condition.id}
+                    type="button"
+                    onClick={() => {
+                      setSaved(false);
+                      toggleCondition(condition.id);
+                    }}
+                  >
                     <Icon aria-hidden="true" />
                     <strong>{condition.label}</strong>
                     <span>{condition.description}</span>
@@ -48,11 +72,27 @@ export default function ProfilePage() {
               </div>
             </div>
             <div className="segmented-control" role="group" aria-label="Mode perjalanan">
-              <button className="active" type="button">
+              <button
+                aria-pressed={travelMode === "WALK"}
+                className={travelMode === "WALK" ? "active" : ""}
+                type="button"
+                onClick={() => {
+                  setSaved(false);
+                  setTravelMode("WALK");
+                }}
+              >
                 <Footprints aria-hidden="true" />
                 Jalan kaki
               </button>
-              <button type="button">
+              <button
+                aria-pressed={travelMode === "BICYCLE"}
+                className={travelMode === "BICYCLE" ? "active" : ""}
+                type="button"
+                onClick={() => {
+                  setSaved(false);
+                  setTravelMode("BICYCLE");
+                }}
+              >
                 <Bike aria-hidden="true" />
                 Sepeda
               </button>
@@ -64,7 +104,14 @@ export default function ProfilePage() {
                 <p>Gunakan ambang risiko lebih ketat untuk anak kecil.</p>
               </div>
               <label className="switch" aria-label="Aktifkan mode keluarga">
-                <input type="checkbox" />
+                <input
+                  checked={familyMode}
+                  type="checkbox"
+                  onChange={(event) => {
+                    setSaved(false);
+                    setFamilyMode(event.target.checked);
+                  }}
+                />
                 <span />
               </label>
             </div>
@@ -79,8 +126,18 @@ export default function ProfilePage() {
               </div>
             </div>
             <label className="range-field" htmlFor="aqi-threshold">
-              <span>AQI 110</span>
-              <input id="aqi-threshold" type="range" min="50" max="200" defaultValue="110" />
+              <span>AQI {alertAQIThreshold}</span>
+              <input
+                id="aqi-threshold"
+                max="200"
+                min="50"
+                type="range"
+                value={alertAQIThreshold}
+                onChange={(event) => {
+                  setSaved(false);
+                  setAlertAQIThreshold(Number(event.target.value));
+                }}
+              />
             </label>
             <div className="threshold-scale" aria-hidden="true">
               <span>50</span>
@@ -95,18 +152,28 @@ export default function ProfilePage() {
             <span className="eyebrow">Ringkasan aktif</span>
             <h2>Rute dengan AQI tinggi akan diberi penalti lebih besar.</h2>
             <p>
-              Untuk profil sensitif, segmen AQI di atas 100 akan muncul sebagai prioritas peringatan pada peta dan
-              rekomendasi.
+              Untuk profil sensitif, segmen AQI di atas {alertAQIThreshold} akan muncul sebagai prioritas peringatan
+              pada peta dan rekomendasi.
             </p>
-            <div className="summary-meter">
-              <span style={{ width: "72%" }} />
+            <div className="summary-meter" aria-label={`Sensitivitas profil ${conditions.length + 1} dari 5`}>
+              <span style={{ width: `${Math.min(92, 40 + conditions.length * 12 + (familyMode ? 16 : 0))}%` }} />
             </div>
             <div className="profile-actions">
-              <Button icon={Save}>Simpan profil</Button>
+              <Button
+                icon={Save}
+                onClick={() => {
+                  setSaved(true);
+                }}
+              >
+                Simpan profil
+              </Button>
               <LinkButton href="/map" variant="secondary">
                 Lihat peta
               </LinkButton>
             </div>
+            <p aria-live="polite" className="form-help">
+              {saved ? "Profil disimpan di state lokal dan siap dipakai saat analisis rute." : null}
+            </p>
           </aside>
         </section>
       </main>
